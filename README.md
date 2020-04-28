@@ -15,9 +15,9 @@ module {
 }
 
 inputs {
-  name                = "my-servicebus-dev"
+  name                = "simple"
   location            = "westeurope"
-  resource_group_name = "ipt-servicebus-rg"
+  resource_group_name = "servicebus-simple-rg"
   sku                 = "Standard"
 
   topics = [
