@@ -52,7 +52,6 @@ keys = {
 
 topic_ids = {
   "0" = "/subscriptions/{subscription_id}/resourceGroups/servicebus-simple-rg/providers/Microsoft.ServiceBus/namespaces/simple-sbn/topics/mytopic"
-  "1" = "/subscriptions/{subscription_id}/resourceGroups/servicebus-simple-rg/providers/Microsoft.ServiceBus/namespaces/simple-sbn/topics/mytopic2"
 }
 
 
