@@ -3,9 +3,9 @@ output "id" {
   value       = azurerm_servicebus_namespace.sb.id
 }
 
-output "topic_ids" {
+output "topics" {
   description = "Map of topics and their ids."
-  value       = { for k, v in azurerm_servicebus_topic.sb : k => v.id }
+  value       = { for k, v in azurerm_servicebus_topic.sb : k => v.name }
 }
 
 output "keys" {
