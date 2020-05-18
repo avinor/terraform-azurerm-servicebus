@@ -29,12 +29,6 @@ locals {
   authorization_rules = { for a in var.authorization_rules : a.name => a }
 
   diag_namespace_logs = [
-    "ArchiveLogs",
-    "AutoScaleLogs",
-    "CustomerManagedKeyUserLogs",
-    "EventHubVNetConnectionEvent",
-    "KafkaCoordinatorLogs",
-    "KafkaUserErrorLogs",
     "OperationalLogs",
   ]
   diag_namespace_metrics = [
