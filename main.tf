@@ -104,7 +104,7 @@ resource "azurerm_servicebus_topic_authorization_rule" "sb" {
 
   listen = each.value.key.listen
   send   = each.value.key.send
-  manage = false
+  manage = each.value.manage
 
   depends_on = [azurerm_servicebus_topic.sb]
 }
