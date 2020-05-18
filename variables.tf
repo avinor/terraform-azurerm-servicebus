@@ -18,8 +18,13 @@ variable "sku" {
 
 variable "diagnostics" {
   description = "Diagnostic settings for those resources that support it. See README.md for details on configuration."
-  type        = object({ destination = string, eventhub_name = string, logs = list(string), metrics = list(string) })
-  default     = null
+  type = object({
+    destination   = string,
+    eventhub_name = string,
+    logs          = list(string),
+    metrics       = list(string)
+  })
+  default = null
 }
 
 variable "tags" {
@@ -34,13 +39,23 @@ variable "topics" {
     name                = string,
     enable_partitioning = bool,
     default_message_ttl = string,
-    keys                = list(object({ name = string, listen = bool, send = bool }))
+    keys = list(object({
+      name   = string,
+      listen = bool,
+      send   = bool,
+      manage = bool
+    }))
   }))
   default = []
 }
 
 variable "authorization_rules" {
   description = "Authorization rules to add to the namespace. For topics use `topics` variable to add authorization keys."
-  type        = list(object({ name = string, listen = bool, send = bool, manage = bool }))
-  default     = []
+  type = list(object({
+    name   = string,
+    listen = bool,
+    send   = bool,
+    manage = bool
+  }))
+  default = []
 }
