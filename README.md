@@ -8,6 +8,7 @@ Terraform module to deploy a servicebus on Azure
 This example deploys a simple servicebus.
 
 Example uses [tau](https://github.com/avinor/tau) for deployment.
+NB! For examples using terraform for deployment see the examples directory.
 
 ```terraform
 module {

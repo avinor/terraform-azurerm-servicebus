@@ -23,7 +23,7 @@ module "servicebus" {
     }
   ]
 
-  ip_rules = ["10.10.10.*/24"]
+  ip_rules = ["10.10.10.0/24"]
 
   tags = {
     tag1 = "value1"
