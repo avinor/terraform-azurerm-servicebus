@@ -19,9 +19,9 @@ variable "sku" {
 variable "diagnostics" {
   description = "Diagnostic settings for those resources that support it. See README.md for details on configuration."
   type = object({
-    destination   = string,
-    eventhub_name = string,
-    logs          = list(string),
+    destination   = string
+    eventhub_name = string
+    logs          = list(string)
     metrics       = list(string)
   })
   default = null
@@ -33,16 +33,31 @@ variable "tags" {
   default     = {}
 }
 
+variable "ip_rules" {
+  description = "One or more IP Addresses, or CIDR Blocks which should be able to access the ServiceBus Namespace."
+  type        = list(string)
+  default     = []
+}
+
+variable "network_rules" {
+  description = "One or more network_rules"
+  type = list(object({
+    subnet_id                            = string
+    ignore_missing_vnet_service_endpoint = bool
+  }))
+  default = []
+}
+
 variable "topics" {
   description = "Topics for the servicebus"
   type = list(object({
-    name                = string,
-    enable_partitioning = bool,
-    default_message_ttl = string,
+    name                = string
+    enable_partitioning = bool
+    default_message_ttl = string
     keys = list(object({
-      name   = string,
-      listen = bool,
-      send   = bool,
+      name   = string
+      listen = bool
+      send   = bool
       manage = bool
     }))
   }))
@@ -52,9 +67,9 @@ variable "topics" {
 variable "authorization_rules" {
   description = "Authorization rules to add to the namespace. For topics use `topics` variable to add authorization keys."
   type = list(object({
-    name   = string,
-    listen = bool,
-    send   = bool,
+    name   = string
+    listen = bool
+    send   = bool
     manage = bool
   }))
   default = []

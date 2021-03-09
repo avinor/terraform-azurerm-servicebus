@@ -28,9 +28,10 @@ inputs {
 
       keys = [
         {
-          name   = "key1",
-          listen = true,
-          send   = true,
+          name   = "key1"
+          listen = true
+          send   = true
+          manage = false
         }
       ]
     }

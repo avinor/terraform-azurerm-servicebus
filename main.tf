@@ -3,7 +3,7 @@ terraform {
 }
 
 provider azurerm {
-  version = "~>2.30.0"
+  version = "~>2.50.0"
   features {}
 }
 
@@ -37,7 +37,7 @@ locals {
 
   diag_resource_list = var.diagnostics != null ? split("/", var.diagnostics.destination) : []
   parsed_diag = var.diagnostics != null ? {
-    log_analytics_id   = contains(local.diag_resource_list, "microsoft.operationalinsights") ? var.diagnostics.destination : null
+    log_analytics_id   = contains(local.diag_resource_list, "Microsoft.OperationalInsights") ? var.diagnostics.destination : null
     storage_account_id = contains(local.diag_resource_list, "Microsoft.Storage") ? var.diagnostics.destination : null
     event_hub_auth_id  = contains(local.diag_resource_list, "Microsoft.EventHub") ? var.diagnostics.destination : null
     metric             = contains(var.diagnostics.metrics, "all") ? local.diag_namespace_metrics : var.diagnostics.metrics
@@ -66,6 +66,24 @@ resource "azurerm_servicebus_namespace" "sb" {
   sku                 = "Standard"
 
   tags = var.tags
+}
+
+resource "azurerm_servicebus_namespace_network_rule_set" "sb" {
+  count = length(var.ip_rules) + length(var.network_rules) > 0 ? 1 : 0
+
+  namespace_name      = azurerm_servicebus_namespace.sb.name
+  resource_group_name = azurerm_resource_group.sb.name
+
+  default_action = "Deny"
+  ip_rules       = var.ip_rules
+
+  dynamic "network_rules" {
+    for_each = var.network_rules
+    content {
+      subnet_id                            = network_rules.value["subnet_id"]
+      ignore_missing_vnet_service_endpoint = network_rules.value["ignore_missing_vnet_service_endpoint"]
+    }
+  }
 }
 
 resource "azurerm_servicebus_namespace_authorization_rule" "sb" {
