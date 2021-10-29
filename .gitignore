@@ -8,6 +8,8 @@
 # .tfvars files
 *.tfvars
 
+*.terraform.lock.hcl
+
 # Inetllij Idea
 .idea
 *.iml
