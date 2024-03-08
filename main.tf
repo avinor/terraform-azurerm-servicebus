@@ -3,7 +3,7 @@ terraform {
   required_providers {
     azurerm = {
       source  = "hashicorp/azurerm"
-      version = "~>2.83.0"
+      version = "~>3.94.0"
     }
   }
 }
@@ -13,6 +13,7 @@ provider "azurerm" {
 }
 
 locals {
+
   default_topic = {
     enable_partitioning       = false
     default_message_ttl       = null
@@ -25,15 +26,19 @@ locals {
     merge(local.default_topic, t)
   ]
 
-  keys = { for tk in flatten([for h in var.topics :
-    [for k in h.keys : {
-      topic = h.name
-      key   = k
-  }]]) : format("%s.%s", tk.topic, tk.key.name) => tk }
+  keys = flatten([
+    for t in var.topics : [
+      for a in t.keys : {
+        topic = t.name
+        rule  = a
+      }
+    ]
+  ])
 
   authorization_rules = { for a in var.authorization_rules : a.name => a }
 
   diag_resource_list = var.diagnostics != null ? split("/", var.diagnostics.destination) : []
+
   parsed_diag = var.diagnostics != null ? {
     log_analytics_id   = contains(local.diag_resource_list, "Microsoft.OperationalInsights") ? var.diagnostics.destination : null
     storage_account_id = contains(local.diag_resource_list, "Microsoft.Storage") ? var.diagnostics.destination : null
@@ -69,8 +74,7 @@ resource "azurerm_servicebus_namespace" "sb" {
 resource "azurerm_servicebus_namespace_network_rule_set" "sb" {
   count = length(var.ip_rules) + length(var.network_rules) > 0 ? 1 : 0
 
-  namespace_name      = azurerm_servicebus_namespace.sb.name
-  resource_group_name = azurerm_resource_group.sb.name
+  namespace_id = azurerm_servicebus_namespace.sb.id
 
   default_action = "Deny"
   ip_rules       = var.ip_rules
@@ -87,9 +91,8 @@ resource "azurerm_servicebus_namespace_network_rule_set" "sb" {
 resource "azurerm_servicebus_namespace_authorization_rule" "sb" {
   for_each = local.authorization_rules
 
-  name                = each.key
-  namespace_name      = azurerm_servicebus_namespace.sb.name
-  resource_group_name = azurerm_resource_group.sb.name
+  name         = each.key
+  namespace_id = azurerm_servicebus_namespace.sb.id
 
   listen = each.value.listen
   send   = each.value.send
@@ -97,29 +100,24 @@ resource "azurerm_servicebus_namespace_authorization_rule" "sb" {
 }
 
 resource "azurerm_servicebus_topic" "sb" {
-  count = length(local.topics_with_defaults)
+  for_each = { for i in local.topics_with_defaults : i.name => i }
 
-  namespace_name      = azurerm_servicebus_namespace.sb.name
-  resource_group_name = azurerm_resource_group.sb.name
-
-  name                      = local.topics_with_defaults[count.index].name
-  enable_partitioning       = local.topics_with_defaults[count.index].enable_partitioning
-  default_message_ttl       = local.topics_with_defaults[count.index].default_message_ttl
-  auto_delete_on_idle       = local.topics_with_defaults[count.index].auto_delete_on_idle
-  enable_batched_operations = local.topics_with_defaults[count.index].enable_batched_operations
+  name                      = each.key
+  namespace_id              = azurerm_servicebus_namespace.sb.id
+  enable_partitioning       = each.value.enable_partitioning
+  default_message_ttl       = each.value.default_message_ttl
+  auto_delete_on_idle       = each.value.auto_delete_on_idle
+  enable_batched_operations = each.value.enable_batched_operations
 }
 
 resource "azurerm_servicebus_topic_authorization_rule" "sb" {
-  for_each = local.keys
+  for_each = { for i in local.keys : format("%s-%s", i.topic, i.rule.name) => i }
 
-  name                = each.value.key.name
-  namespace_name      = azurerm_servicebus_namespace.sb.name
-  topic_name          = each.value.topic
-  resource_group_name = azurerm_resource_group.sb.name
-
-  listen = each.value.key.listen
-  send   = each.value.key.send
-  manage = each.value.key.manage
+  name     = each.value.rule.name
+  topic_id = azurerm_servicebus_topic.sb[each.value.topic].id
+  listen   = each.value.rule.listen
+  send     = each.value.rule.send
+  manage   = each.value.rule.manage
 
   depends_on = [azurerm_servicebus_topic.sb]
 }
@@ -137,16 +135,13 @@ resource "azurerm_monitor_diagnostic_setting" "namespace" {
   eventhub_name                  = local.parsed_diag.event_hub_auth_id != null ? var.diagnostics.eventhub_name : null
   storage_account_id             = local.parsed_diag.storage_account_id
 
-  dynamic "log" {
-    for_each = data.azurerm_monitor_diagnostic_categories.default.logs
+  dynamic "enabled_log" {
+    for_each = {
+      for k, v in data.azurerm_monitor_diagnostic_categories.default.log_category_types : k => v
+      if contains(local.parsed_diag.log, "all") || contains(local.parsed_diag.log, v)
+    }
     content {
-      category = log.value
-      enabled  = contains(local.parsed_diag.log, "all") || contains(local.parsed_diag.log, log.value)
-
-      retention_policy {
-        enabled = false
-        days    = 0
-      }
+      category = enabled_log.value
     }
   }
 
@@ -155,11 +150,7 @@ resource "azurerm_monitor_diagnostic_setting" "namespace" {
     content {
       category = metric.value
       enabled  = contains(local.parsed_diag.metric, "all") || contains(local.parsed_diag.metric, metric.value)
-
-      retention_policy {
-        enabled = false
-        days    = 0
-      }
     }
   }
+
 }
