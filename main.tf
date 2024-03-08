@@ -70,7 +70,7 @@ resource "azurerm_servicebus_namespace" "sb" {
   tags                          = var.tags
 
   dynamic "network_rule_set" {
-    for_each = [true]
+    for_each = length(var.ip_rules) > 0 ? [true] : []
     content {
       default_action           = length(var.ip_rules) > 0 ? "Deny" : "Allow"
       trusted_services_allowed = true
