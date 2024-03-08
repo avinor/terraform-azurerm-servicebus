@@ -63,27 +63,18 @@ resource "azurerm_resource_group" "sb" {
 }
 
 resource "azurerm_servicebus_namespace" "sb" {
-  name                = "${var.name}-sbn"
-  location            = azurerm_resource_group.sb.location
-  resource_group_name = azurerm_resource_group.sb.name
-  sku                 = "Standard"
+  name                          = "${var.name}-sbn"
+  location                      = azurerm_resource_group.sb.location
+  resource_group_name           = azurerm_resource_group.sb.name
+  sku                           = "Standard"
+  tags                          = var.tags
 
-  tags = var.tags
-}
-
-resource "azurerm_servicebus_namespace_network_rule_set" "sb" {
-  count = length(var.ip_rules) + length(var.network_rules) > 0 ? 1 : 0
-
-  namespace_id = azurerm_servicebus_namespace.sb.id
-
-  default_action = "Deny"
-  ip_rules       = var.ip_rules
-
-  dynamic "network_rules" {
-    for_each = var.network_rules
+  dynamic "network_rule_set" {
+    for_each = [true]
     content {
-      subnet_id                            = network_rules.value["subnet_id"]
-      ignore_missing_vnet_service_endpoint = network_rules.value["ignore_missing_vnet_service_endpoint"]
+      default_action           = length(var.ip_rules) > 0 ? "Deny" : "Allow"
+      trusted_services_allowed = true
+      ip_rules                 = length(var.ip_rules) > 0 ? var.ip_rules : null
     }
   }
 }
@@ -111,7 +102,7 @@ resource "azurerm_servicebus_topic" "sb" {
 }
 
 resource "azurerm_servicebus_topic_authorization_rule" "sb" {
-  for_each = { for i in local.keys : format("%s.%s", i.topic, i.rule.name) => i }
+  for_each = { for i in local.keys : format("%s-%s", i.topic, i.rule.name) => i }
 
   name     = each.value.rule.name
   topic_id = azurerm_servicebus_topic.sb[each.value.topic].id
