@@ -111,7 +111,7 @@ resource "azurerm_servicebus_topic" "sb" {
 }
 
 resource "azurerm_servicebus_topic_authorization_rule" "sb" {
-  for_each = { for i in local.keys : format("%s-%s", i.topic, i.rule.name) => i }
+  for_each = { for i in local.keys : format("%s.%s", i.topic, i.rule.name) => i }
 
   name     = each.value.rule.name
   topic_id = azurerm_servicebus_topic.sb[each.value.topic].id
